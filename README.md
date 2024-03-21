@@ -1,4 +1,4 @@
-# 有话说
+![Clip_2024-03-21_15-55-14](https://github.com/xiaocuanChina/view-system-agents/assets/113506112/6cb6934e-4a32-4bd2-a2bc-360dc29ff7da)# 有话说
 刚接触Python，感觉Python比java方便一些，而且可以通过工具一键打包成exe程序，好用，爱用！
 
 对于页面UI不是很熟练，只是打算做出来用于练手的一个项目，方便自己和身边的朋友用
@@ -9,7 +9,8 @@
 
 话说我看别人的UI画的好好看，为什么我这个画出来和Swing不相上下
 # 页面
-![Clip_2024-03-08_16-26-02](https://github.com/xiaocuanChina/View-system-agents/assets/113506112/7d36b9ae-7741-40b6-a4b9-d8f0675e5135)
+![Clip_2024-03-21_15-55-14](https://github.com/xiaocuanChina/view-system-agents/assets/113506112/586d22b5-daee-4f27-b92c-d83b1328499d)
+
 # 为什么要写个这样的程序
 windows虽然可以通过手动的方式来修改系统代理，但是懒，所以让GPT帮我整了个这样的程序
 
