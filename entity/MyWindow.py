@@ -1,8 +1,9 @@
 from datetime import datetime
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QHBoxLayout, QToolTip
-from PyQt5.QtGui import QIcon
-from tool.ipTool import *
+from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QHBoxLayout, QToolTip, QLineEdit
+
+from tool.LabelTool import set_proxy_server_info_label, set_ipv4_add_str_label, set_agent_state_label, \
+    set_refresh_btn_label
 from tool.strTool import *
 from tool.proxyTool import *
 
@@ -13,6 +14,10 @@ class MyWindow(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.show_text_edit = None
+        self.separate_text_edit = None
+        self.port_text_edit = None
+        self.server_text_edit = None
         self.ipv4_add_str = None
         self.proxy_server_info_str = None
         self.copy_server_btn = None
@@ -32,7 +37,7 @@ class MyWindow(QWidget):
         screen_height = screen_geometry.height()
 
         # 窗口宽度
-        self.WIDGET_WIDTH = 330
+        self.WIDGET_WIDTH = 360
         # 窗口高度
         self.WIDGET_HEIGHT = 120
         # 窗口默认x轴
@@ -41,6 +46,8 @@ class MyWindow(QWidget):
         self.WINDOW_Y = (screen_height - self.WIDGET_HEIGHT) // 2
         # 设置标题
         self.TITLE = '系统代理信息'
+        # 文本宽度（一行数量）
+        self.TEXT_WIDTH = 17
 
         self.initUI()
 
@@ -63,13 +70,24 @@ class MyWindow(QWidget):
 
         # 代理服务器信息
         server, port = get_local_proxy_windows()
-        self.proxy_server_info_str = QLabel(f"代理服务器信息: {server}:{port}", self)
-        self.copy_server_btn = QPushButton('复制本地地址', self)
-        tip_str = "复制的代理服务器地址仅在本机使用，如果需要获取局域网内可使用的服务器ip以及端口请查看自己代理软件的配置对应端口"
-        self.copy_server_btn.setToolTip(split_string_by_length(tip_str, 17))
-        self.copy_server_btn.setIcon(QIcon(get_package_icon_path('image/复制.png')))  # 替换为你的图标文件路径
-        item_copy_str = f"https://{server}:{port}"
-        self.copy_server_btn.clicked.connect(lambda: self.copy_str(item_copy_str, self.copy_server_btn))
+        if server and port:
+            self.proxy_server_info_str = QLabel(f"代理服务器信息: {server}:{port}", self)
+            self.copy_server_btn = QPushButton('复制本地地址', self)
+            tip_str = "复制的代理服务器地址仅在本机使用，如果需要获取局域网内可使用的服务器ip以及端口请查看自己代理软件的配置对应端口"
+            self.copy_server_btn.setToolTip(split_string_by_length(tip_str, self.TEXT_WIDTH))
+            self.copy_server_btn.setIcon(QIcon(get_package_icon_path('image/复制.png')))  # 替换为你的图标文件路径
+            item_copy_str = f"https://{server}:{port}"
+            self.copy_server_btn.clicked.connect(lambda: copy_str(item_copy_str, self.copy_server_btn))
+        else:
+            self.proxy_server_info_str = QLabel(f"请设置代理服务器信息: ", self)
+            tip_str = "输入完代理服务器地址之后<span style='color:red;'>点击刷新</span>即可自动为您配置代理服务器地址"
+            self.server_text_edit = QLineEdit(self)
+            self.server_text_edit.setPlaceholderText("请输入服务器")  # 设置背景文字
+            self.server_text_edit.setToolTip(split_string_by_length(tip_str, self.TEXT_WIDTH))
+            self.separate_text_edit = QLabel(f": ", self)
+            self.port_text_edit = QLineEdit(self)
+            self.port_text_edit.setPlaceholderText("请输入端口号")  # 设置背景文字
+            self.port_text_edit.setToolTip(split_string_by_length(tip_str, self.TEXT_WIDTH))
 
         # self.copy_server_btn = QPushButton('复制局域网', self)
         # self.copy_server_btn.setToolTip('复制（局域网）代理服务器地址到剪贴板')
@@ -81,7 +99,7 @@ class MyWindow(QWidget):
         self.copy_ip_btn = QPushButton('一键复制', self)
         self.copy_ip_btn.setToolTip('仅复制IPv4地址')
         self.copy_ip_btn.setIcon(QIcon(get_package_icon_path('image/复制.png')))
-        self.copy_ip_btn.clicked.connect(lambda: self.copy_str(ipv4_add, self.copy_ip_btn))
+        self.copy_ip_btn.clicked.connect(lambda: copy_str(ipv4_add, self.copy_ip_btn))
 
         # 代理状态
         self.agent_state = QLabel(f'当前代理状态：{get_agent_status()}', self)
@@ -122,6 +140,14 @@ class MyWindow(QWidget):
         proxy_server_x_box = QHBoxLayout()  # 创建水平布局
         proxy_server_x_box.addWidget(self.proxy_server_info_str)
         proxy_server_x_box.addWidget(self.copy_server_btn)
+
+        self.show_text_edit = (self.port_text_edit
+                               and self.port_text_edit
+                               and self.port_text_edit.isWidgetType())
+        if self.show_text_edit:
+            proxy_server_x_box.addWidget(self.server_text_edit)
+            proxy_server_x_box.addWidget(self.separate_text_edit)
+            proxy_server_x_box.addWidget(self.port_text_edit)
         y_box.addLayout(proxy_server_x_box)
 
         # 代理状态布局
@@ -153,40 +179,31 @@ class MyWindow(QWidget):
         self.close()
 
     def refresh(self):
-        # 刷新服务器地址
-        server, port = get_local_proxy_windows()
-        self.proxy_server_info_str.setText(f"代理服务器信息: {server}:{port}")
+        if self.show_text_edit:
+            server = self.server_text_edit.text()
+            port = self.port_text_edit.text()
+            show_server_msg = False
+            if server and port:
+                show_server_msg = set_local_proxy_windows(server, port)
 
-        # 刷新IPv4的地址
-        ipv4_add = get_IPv4_path()
-        self.ipv4_add_str.setText(f"本机IPv4地址: {ipv4_add}")
+            if show_server_msg:
+                self.server_text_edit.deleteLater()
+                self.port_text_edit.deleteLater()
+                self.separate_text_edit.deleteLater()
+                set_ipv4_add_str_label(self.ipv4_add_str)
+                self.show_text_edit = False
+        else:
+            # 刷新IPv4的地址
+            set_ipv4_add_str_label(self.ipv4_add_str)
+
+        # 刷新服务器地址
+        set_proxy_server_info_label(self.proxy_server_info_str)
 
         # 刷新代理状态
-        curr_time = datetime.now()
-        refresh_time = curr_time.strftime("%H:%M:%S")
-        state = get_agent_status()
-        self.agent_state.setText(f'当前代理状态：{state}')
+        set_agent_state_label(self.agent_state)
 
         # 设置按钮刷新时间
-        show_time_str = f'刷新：{refresh_time}.{curr_time.microsecond // 1000}'
-        self.refresh_btn.setText(show_time_str)
-        self.refresh_btn.setIcon(QIcon(get_package_icon_path('')))
-
-    def copy_str(self, s, my_btn):
-        """
-        复制内容到粘贴板并修改按钮内容
-        :param s: 需要复制的文本内容
-        :param my_btn: 按钮对象
-        :return: None
-        """
-        # 获取剪贴板实例
-        clipboard = QGuiApplication.clipboard()
-        # 设置剪贴板内容
-        clipboard.setText(s)
-
-        # 更新复制按钮的文本和图标
-        my_btn.setText("复制成功")
-        my_btn.setIcon(QIcon(get_package_icon_path('image/成功.png')))
+        set_refresh_btn_label(self.refresh_btn)
 
     def set_windows_top(self):
         """

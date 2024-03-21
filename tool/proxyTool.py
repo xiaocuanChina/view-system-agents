@@ -1,7 +1,4 @@
-import socket
 import winreg
-
-from tool.ipTool import get_IPv4_path
 
 
 def get_agent_status():
@@ -45,19 +42,57 @@ def get_local_proxy_windows():
     获取本地使用的代理服务器 IP 和端口 (Windows)
 
     Returns:
-        代理服务器 IP 和端口，例如 ("127.0.0.1", 8080)
+        正常状态：代理服务器 IP 和端口，例如 ("127.0.0.1", 8080)
+        异常状态：返回参数均为None
     """
+    key_path = r"Software\Microsoft\Windows\CurrentVersion\Internet Settings"
+    key_name = "ProxyServer"
+    # key_name = "ProxyServerTest"
 
-    key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
-                         r"Software\Microsoft\Windows\CurrentVersion\Internet Settings")
+    key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path)
     try:
-        proxy_server, proxy_enable = winreg.QueryValueEx(key, "ProxyServer")
+        proxy_server, proxy_enable = winreg.QueryValueEx(key, key_name)
         if proxy_enable == 1:
             server_and_port_info = proxy_server.split(":")
-            server = server_and_port_info[0]
-            port = server_and_port_info[1]
-            return server, port
+            if len(server_and_port_info) == 2:
+                server = server_and_port_info[0]
+                port = server_and_port_info[1]
+                return server, port
+            return None, None
+    except FileNotFoundError:
+        try:
+            # 打开注册表项
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_WRITE) as key:
+                # 设置字符串值
+                winreg.SetValueEx(key, key_name, 0, winreg.REG_SZ, "")
+            return None, None
+
+        except Exception as e:
+            print("出现错误:", e)
     finally:
         winreg.CloseKey(key)
 
 
+def set_local_proxy_windows(server, proxy):
+    """
+    设置本机系统代理服务器
+    @param server: 代理服务器 IP
+    @param proxy: 代理服务器端口
+    """
+    key_path = r"Software\Microsoft\Windows\CurrentVersion\Internet Settings"
+    key_name = "ProxyServer"
+    # key_name = "ProxyServerTest"
+    new_value = f"{server}:{proxy}"
+
+    try:
+        # 打开注册表项
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_WRITE) as key:
+            # 修改指定键的值
+            winreg.SetValueEx(key, key_name, 0, winreg.REG_SZ, new_value)
+
+        print("注册表项值已成功修改。")
+
+    except Exception as e:
+        print("出现错误:", e)
+        return False
+    return True
