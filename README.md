@@ -56,7 +56,7 @@ windows虽然可以通过手动的方式来修改系统代理，但是懒，所�
 
 ![Clip_2024-03-08_23-09-55](https://github.com/xiaocuanChina/View-system-agents/assets/113506112/45632775-e472-44b3-b749-b02506d34d33)
 
-笨蛋，ios你还希望有第三方的程序吗，用小火箭（Shadowrocket）就对了！！！
+ios你还希望有第三方的程序吗，用小火箭（Shadowrocket）就对了！！！
 
 你说你没有美区账号下载不了小火箭？
 
