@@ -1,4 +1,3 @@
-![Clip_2024-03-21_15-55-14](https://github.com/xiaocuanChina/view-system-agents/assets/113506112/6cb6934e-4a32-4bd2-a2bc-360dc29ff7da)
 # 有话说
 刚接触Python，感觉Python比java方便一些，而且可以通过工具一键打包成exe程序，好用，爱用！
 
