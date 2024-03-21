@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QHBoxLayo
 
 from tool.LabelTool import set_proxy_server_info_label, set_ipv4_add_str_label, set_agent_state_label, \
     set_refresh_btn_label
+from tool.ipTool import get_IPv4_path
 from tool.strTool import *
 from tool.proxyTool import *
 
@@ -14,6 +15,7 @@ class MyWindow(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.edit_server_btn = None
         self.show_text_edit = None
         self.separate_text_edit = None
         self.port_text_edit = None
@@ -69,25 +71,28 @@ class MyWindow(QWidget):
         self.ipv4_add_str = QLabel(f"本机IPv4地址: {ipv4_add}", self)
 
         # 代理服务器信息
-        server, port = get_local_proxy_windows()
-        if server and port:
-            self.proxy_server_info_str = QLabel(f"代理服务器信息: {server}:{port}", self)
-            self.copy_server_btn = QPushButton('复制本地地址', self)
-            tip_str = "复制的代理服务器地址仅在本机使用，如果需要获取局域网内可使用的服务器ip以及端口请查看自己代理软件的配置对应端口"
-            self.copy_server_btn.setToolTip(split_string_by_length(tip_str, self.TEXT_WIDTH))
-            self.copy_server_btn.setIcon(QIcon(get_package_icon_path('image/复制.png')))  # 替换为你的图标文件路径
-            item_copy_str = f"https://{server}:{port}"
-            self.copy_server_btn.clicked.connect(lambda: copy_str(item_copy_str, self.copy_server_btn))
-        else:
-            self.proxy_server_info_str = QLabel(f"请设置代理服务器信息: ", self)
-            tip_str = "输入完代理服务器地址之后<span style='color:red;'>点击刷新</span>即可自动为您配置代理服务器地址"
-            self.server_text_edit = QLineEdit(self)
-            self.server_text_edit.setPlaceholderText("请输入服务器")  # 设置背景文字
-            self.server_text_edit.setToolTip(split_string_by_length(tip_str, self.TEXT_WIDTH))
-            self.separate_text_edit = QLabel(f": ", self)
-            self.port_text_edit = QLineEdit(self)
-            self.port_text_edit.setPlaceholderText("请输入端口号")  # 设置背景文字
-            self.port_text_edit.setToolTip(split_string_by_length(tip_str, self.TEXT_WIDTH))
+        # 如何配置代理服务器喝配置代理服务器的分别显示见【刷新按钮】附近的if判断
+        # ------- 代理服务器信息 -------
+        local_server, local_port = get_local_proxy_windows()
+        self.proxy_server_info_str = QLabel(f"代理服务器信息: {local_server}:{local_port}", self)
+        self.copy_server_btn = QPushButton('复制本地地址', self)
+        tip_str = "复制的代理服务器地址仅在本机使用，如果需要获取局域网内可使用的服务器ip以及端口请查看自己代理软件的配置对应端口"
+        self.copy_server_btn.setToolTip(split_string_by_length(tip_str, self.TEXT_WIDTH))
+        self.copy_server_btn.setIcon(QIcon(get_package_icon_path('image/复制.png')))  # 替换为你的图标文件路径
+        self.copy_server_btn.clicked.connect(self.copy_proxy_server_address)
+        self.edit_server_btn = QPushButton('调整代理服务器', self)
+        self.edit_server_btn.setIcon(QIcon(get_package_icon_path('image/编辑.png')))  # 替换为你的图标文件路径
+        self.edit_server_btn.clicked.connect(self.edit_server_info)
+
+        # ------- 配置代理服务器 -------
+        # tip_str = "输入完代理服务器地址之后<span style='color:red;'>点击刷新</span>即可自动为您配置代理服务器地址"
+        self.server_text_edit = QLineEdit(self)
+        self.server_text_edit.setPlaceholderText("请输入服务器")  # 设置背景文字
+        # self.server_text_edit.setToolTip(split_string_by_length(tip_str, self.TEXT_WIDTH))
+        self.separate_text_edit = QLabel(f":", self)
+        self.port_text_edit = QLineEdit(self)
+        self.port_text_edit.setPlaceholderText("请输入端口号")  # 设置背景文字
+        # self.port_text_edit.setToolTip(split_string_by_length(tip_str, self.TEXT_WIDTH))
 
         # self.copy_server_btn = QPushButton('复制局域网', self)
         # self.copy_server_btn.setToolTip('复制（局域网）代理服务器地址到剪贴板')
@@ -127,6 +132,19 @@ class MyWindow(QWidget):
         self.windows_top_btn.setIcon(QIcon(get_package_icon_path('image/置顶-false.png')))
         self.windows_top_btn.clicked.connect(self.set_windows_top)
 
+        if local_server and local_port:
+            self.show_text_edit = False
+            self.server_text_edit.hide()
+            self.port_text_edit.hide()
+            self.separate_text_edit.hide()
+        else:
+            self.show_text_edit = True
+            self.refresh_btn.setText("点我保存")
+            self.refresh_btn.setIcon(QIcon(get_package_icon_path('image/保存.png')))
+            self.proxy_server_info_str.setText("请设置代理服务器信息: ")
+            self.copy_server_btn.hide()
+            self.edit_server_btn.hide()
+
         # 创建垂直布局，并将文本标签和按钮添加到布局中
         y_box = QVBoxLayout()
 
@@ -140,14 +158,12 @@ class MyWindow(QWidget):
         proxy_server_x_box = QHBoxLayout()  # 创建水平布局
         proxy_server_x_box.addWidget(self.proxy_server_info_str)
         proxy_server_x_box.addWidget(self.copy_server_btn)
+        proxy_server_x_box.addWidget(self.edit_server_btn)
 
-        self.show_text_edit = (self.port_text_edit
-                               and self.port_text_edit
-                               and self.port_text_edit.isWidgetType())
-        if self.show_text_edit:
-            proxy_server_x_box.addWidget(self.server_text_edit)
-            proxy_server_x_box.addWidget(self.separate_text_edit)
-            proxy_server_x_box.addWidget(self.port_text_edit)
+        proxy_server_x_box.addWidget(self.server_text_edit)
+        proxy_server_x_box.addWidget(self.separate_text_edit)
+        proxy_server_x_box.addWidget(self.port_text_edit)
+
         y_box.addLayout(proxy_server_x_box)
 
         # 代理状态布局
@@ -179,25 +195,25 @@ class MyWindow(QWidget):
         self.close()
 
     def refresh(self):
-        if self.show_text_edit:
-            server = self.server_text_edit.text()
-            port = self.port_text_edit.text()
-            show_server_msg = False
-            if server and port:
-                show_server_msg = set_local_proxy_windows(server, port)
+        """
+        刷新的方法
+        """
+        # 刷新IPv4的地址
+        set_ipv4_add_str_label(self.ipv4_add_str)
 
-            if show_server_msg:
-                self.server_text_edit.deleteLater()
-                self.port_text_edit.deleteLater()
-                self.separate_text_edit.deleteLater()
-                set_ipv4_add_str_label(self.ipv4_add_str)
-                self.show_text_edit = False
-        else:
-            # 刷新IPv4的地址
-            set_ipv4_add_str_label(self.ipv4_add_str)
+        # 如果设置代理服务器的文本框内容不为空
+        validate_server = self.server_text_edit.text()
+        validate_port = self.port_text_edit.text()
+        if validate_server and validate_port:
+            set_local_proxy_windows(validate_server, validate_port)
+            self.server_text_edit.hide()
+            self.port_text_edit.hide()
+            self.separate_text_edit.hide()
 
-        # 刷新服务器地址
-        set_proxy_server_info_label(self.proxy_server_info_str)
+            self.copy_server_btn.show()
+            self.edit_server_btn.show()
+            # 刷新服务器地址
+            set_proxy_server_info_label(self.proxy_server_info_str)
 
         # 刷新代理状态
         set_agent_state_label(self.agent_state)
@@ -221,3 +237,36 @@ class MyWindow(QWidget):
             self.setWindowFlag(QtCore.Qt.WindowStaysOnTopHint)
             self.windows_top_btn.setIcon(QIcon(get_package_icon_path('image/置顶-true.png')))
         self.show()
+
+    def copy_proxy_server_address(self):
+        """
+        需要复制的代理服务器地址
+        """
+        copy_server, copy_port = get_local_proxy_windows()
+        proxy_server_address = f"https://{copy_server}:{copy_port}"
+        copy_str(proxy_server_address)
+        # 更新复制按钮的文本和图标
+        self.copy_server_btn.setText("复制成功")
+        self.copy_server_btn.setIcon(QIcon(get_package_icon_path('image/成功.png')))
+
+    def edit_server_info(self):
+        """
+        修改代理服务器配置
+        """
+        # 核心代码 设置不同组件的显隐藏
+        self.copy_server_btn.hide()
+        self.edit_server_btn.hide()
+        self.server_text_edit.show()
+        self.separate_text_edit.show()
+        self.port_text_edit.show()
+
+        # 获取默认的代理服务器信息
+        default_server, default_port = get_local_proxy_windows()
+        self.server_text_edit.setText(default_server)
+        self.port_text_edit.setText(default_port)
+
+        # 设置在“修改服务器状态”下的显示的内容
+        self.proxy_server_info_str.setText("请设置代理服务器信息: ")
+        self.refresh_btn.setText("点我保存")
+        self.refresh_btn.setIcon(QIcon(get_package_icon_path('image/保存.png')))
+        self.proxy_server_info_str.setText("请设置代理服务器信息: ")

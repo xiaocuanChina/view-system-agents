@@ -13,6 +13,7 @@ def set_proxy_server_info_label(label):
     """
     server, port = get_local_proxy_windows()
     label.setText(f"代理服务器信息: {server}:{port}")
+    # return server, port
 
 
 def set_ipv4_add_str_label(label):
@@ -40,3 +41,5 @@ def set_refresh_btn_label(label):
     show_time_str = f'刷新：{refresh_time}.{curr_time.microsecond // 1000}'
     label.setText(show_time_str)
     label.setIcon(QIcon(get_package_icon_path('')))
+
+

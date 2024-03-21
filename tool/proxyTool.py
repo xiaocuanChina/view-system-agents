@@ -89,10 +89,13 @@ def set_local_proxy_windows(server, proxy):
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_WRITE) as key:
             # 修改指定键的值
             winreg.SetValueEx(key, key_name, 0, winreg.REG_SZ, new_value)
-
-        print("注册表项值已成功修改。")
-
     except Exception as e:
         print("出现错误:", e)
         return False
     return True
+
+
+if __name__ == '__main__':
+    server, port = get_local_proxy_windows()
+    item_copy_str = f"https://{server}:{port}"
+    print(item_copy_str)
