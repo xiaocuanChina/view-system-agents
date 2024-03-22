@@ -51,12 +51,13 @@ class MyWindow(QWidget):
         # 文本宽度（一行数量）
         self.TEXT_WIDTH = 17
 
-        self.initUI()
-
-    def initUI(self):
         # 设置窗口的基本属性
         self.setGeometry(self.WINDOW_X, self.WINDOW_Y, self.WIDGET_WIDTH, self.WIDGET_HEIGHT)
         self.setWindowTitle(self.TITLE)
+
+        self.initUI()
+
+    def initUI(self):
 
         # 构建网络代理.png的绝对路径
         window_icon_path = get_package_icon_path("image/网络代理.png")
